@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Mission Enable RDS Protection: Enables GuardDuty and RDS Protection Feature (Stage 2)'
+
+Parameters:
+  DetectorId:
+    Type: String
+    Description: The ID of the existing GuardDuty Detector.
+
+Resources:
+  GuardDutyRDSProtectionFeature:
+    Type: AWS::GuardDuty::Detector
+    Properties:
+      Enable: True
+      DataSources: 
+        S3Logs:
+          Enable: True # Recommended to keep enabled
+      Features:
+        - Name: S3_DATA_EVENTS
+          Status: ENABLED # Recommended to keep enabled
+        - Name: EKS_AUDIT_LOGS
+          Status: ENABLED # Recommended to keep enabled
+        - Name: RDS_LOGIN_EVENTS
+          Status: ENABLED
+
+Outputs:
+  GuardDutyDetectorId:
+    Description: The ID of the configured GuardDuty Detector.
+    Value: !Ref DetectorId
+  RDSProtectionStatus:
+    Description: The status of the GuardDuty RDS Protection feature.
+    Value: 'ENABLED'
