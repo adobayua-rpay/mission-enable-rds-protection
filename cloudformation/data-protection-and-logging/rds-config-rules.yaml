@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Mission Enable RDS Protection: AWS Config rules for RDS logging and encryption (Stage 2/3)'
+
+Resources:
+  RdsEncryptionEnabledRule:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: rds-storage-encrypted
+      Description: 'Checks if Amazon RDS DB instances are configured for storage encryption.'
+      Scope:
+        ComplianceResourceTypes:
+          - AWS::RDS::DBInstance
+      Source:
+        Owner: AWS
+        SourceIdentifier: RDS_STORAGE_ENCRYPTED
+
+  RdsLoggingEnabledRule:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: rds-logs-exported
+      Description: 'Checks if RDS DB instances have all specified log types exported to CloudWatch Logs.'
+      InputParameters:
+        logTypes: 'audit,error,general,slowquery'
+      Scope:
+        ComplianceResourceTypes:
+          - AWS::RDS::DBInstance
+      Source:
+        Owner: AWS
+        SourceIdentifier: RDS_LOGGING_ENABLED
+
+Outputs:
+  RdsEncryptionRuleName:
+    Value: !Ref RdsEncryptionEnabledRule
+  RdsLoggingRuleName:
+    Value: !Ref RdsLoggingEnabledRule
