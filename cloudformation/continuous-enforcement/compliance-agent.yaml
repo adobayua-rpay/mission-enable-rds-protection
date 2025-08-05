@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Mission Enable RDS Protection: Deploys continuous compliance agent (Stage 4)'
+
+Resources:
+  ComplianceAgentLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: RdsComplianceCheckerPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'rds:DescribeDBInstances'
+                  - 'config:GetComplianceDetailsByConfigRule'
+                Resource: '*'
+
+  ComplianceAgentLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: rds-compliance-agent
+      Handler: rds_compliance_agent.lambda_handler
+      Role: !GetAtt ComplianceAgentLambdaRole.Arn
+      Runtime: python3.9
+      Code:
+        S3Bucket: 'panaptico-mission-artifacts'
+        S3Key: 'mission-enable-rds-protection/monitoring/agents/rds_compliance_agent.zip'
+      Timeout: 60
+
+  ComplianceAgentEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: 'Triggers the RDS Compliance Agent every hour'
+      ScheduleExpression: 'rate(1 hour)'
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt ComplianceAgentLambda.Arn
+          Id: 'RdsComplianceAgentTarget'
+
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ComplianceAgentLambda
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt ComplianceAgentEventRule.Arn
